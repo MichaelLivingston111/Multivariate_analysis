@@ -1,0 +1,61 @@
+---
+title: "Multivariate analysis"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+
+# This file contains a multivariate analysis technique known as a 'Principal
+# Component Analysis'. This tool is helpful in analyzing data sets with 
+# multiple variables and allowing us to visualize the relationships between
+# them all. It can be a powerful tool to quickly asses large data sets, with 
+# little work on our end.
+
+# Here, I apply this technique to a suite of ocean based variables that
+# dictate the amount of carbon sequestration in the ocean. However, I could
+# apply this to many different situations/data sets.
+
+
+# Load the required libraries:
+library(PCAtools)
+library(ggplot2)
+library(ggfortify)
+library(dplyr)
+
+# Load in the appropriate data
+data <- read.csv("PCA_input.csv", skip = 0, header = TRUE, fill = TRUE)
+
+```
+
+```{r}
+
+# Select variables:
+xdf <- select(data, Carbon_uptake, New_production, bSi_C, Nitrate, 
+              Temperature, TEP_C, Chlorophyll, DO) 
+
+# Here, we use 'seasons' as a grouping variable.
+
+# Create the PCA:
+xpca <- prcomp(xdf, scale = TRUE) 
+
+
+# Plot the PCA:
+autoplot(xpca, data = data, colour = 'Season', loadings = TRUE, 
+         loadings.colour = 'blue',loadings.label = TRUE, 
+         loadings.label.size = 3, loadings.label.colour = 'black',
+         frame = TRUE, frame.type = 'norm')
+
+# When viewing the results, we can see that specific variables such as 
+# Temperature and TEP (carbon gels) are more strongly expressed within the 
+# 'summer group', while variables such as carbon uptake are more prevalent 
+# within the 'spring group'. It is also apparent that the wintertime conditions 
+# are very distinct from the other two groups.
+
+
+
+```
