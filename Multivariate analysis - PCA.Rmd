@@ -10,11 +10,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ```{r}
 
-# This file contains a multivariate analysis technique known as a 'Principal
-# Component Analysis'. This tool is helpful in analyzing data sets with 
-# multiple variables and allowing us to visualize the relationships between
-# them all. It can be a powerful tool to quickly asses large data sets, with 
-# little work on our end.
+# This file contains a multivariate analysis technique known as a 'Principal Component Analysis'. This tool is helpful in analyzing data sets with a large number of variables and allowing us to visualize the relationships between them all. It is a dimensionality reduction technique in which 'Principal Components' are constructed based off of the directions of maximum variation in the data set. It can be a powerful tool to quickly asses large data sets, with little work on our end.
 
 # Here, I apply this technique to a suite of ocean based variables that
 # dictate the amount of carbon sequestration in the ocean. However, I could
@@ -22,40 +18,72 @@ knitr::opts_chunk$set(echo = TRUE)
 
 
 # Load the required libraries:
-library(PCAtools)
-library(ggplot2)
-library(ggfortify)
-library(dplyr)
+suppressMessages(library(PCAtools))
+suppressMessages(library(ggplot2))
+suppressMessages(library(ggfortify))
+suppressMessages(library(dplyr))
+suppressMessages(library(ggpubr))
+suppressMessages(library(viridis))
+
 
 # Load in the appropriate data
 data <- read.csv("PCA_input.csv", skip = 0, header = TRUE, fill = TRUE)
 
 ```
 
+Create the PCA and get a summary of the PCs
 ```{r}
 
-# Select variables:
-xdf <- select(data, Carbon_uptake, New_production, bSi_C, Nitrate, 
-              Temperature, TEP_C, Chlorophyll, DO) 
+# Select variables of interest: Exclude categorical data
+xdf <- select(data, New_production, TEP_C, Nitrate, Chlorophyll, 
+               MLD, Percent_small_cells, bSi_C, Temperature) 
 
-# Here, we use 'seasons' as a grouping variable.
+# Create the Principal components:
+xpca <- prcomp(xdf, scale = TRUE, center = TRUE) 
 
-# Create the PCA:
-xpca <- prcomp(xdf, scale = TRUE) 
+# Obtain a summary of all the principal components:
+summary(xpca)
 
+# Call str() to look at the PCA object:
+str(xpca)
+
+# plot a histogram of the Principal components (PCs):
+plot(xpca)
+
+```
+
+Plot the CPA using auto plot:
+```{r}
 
 # Plot the PCA:
-autoplot(xpca, data = data, colour = 'Season', loadings = TRUE, 
+PCA <- autoplot(xpca, data = data, colour = 'Group', loadings = TRUE, 
          loadings.colour = 'blue',loadings.label = TRUE, 
-         loadings.label.size = 3, loadings.label.colour = 'black',
-         frame = TRUE, frame.type = 'norm')
+         loadings.label.size = 3, loadings.label.colour = 'black')
+
+PCA + 
+  theme_minimal() + 
+  ylim(-0.4, 0.6) +
+  xlim(-0.4, 0.4) +
+  labs(color = "Group") +
+  guides(fill = FALSE) +
+  scale_color_manual(values = c(8, 9, 3, 2, 5), 
+                     labels = c("Spring: Coastal", "Spring: Off-shelf",
+                        "Summer: Coastal", "Summer: Off-shelf",
+                        "Winter: Off-shelf"))
+
 
 # When viewing the results, we can see that specific variables such as 
-# Temperature and TEP (carbon gels) are more strongly expressed within the 
-# 'summer group', while variables such as carbon uptake are more prevalent 
+# Temperature and %TEP (carbon gels) are more strongly expressed within the 
+# 'summer group', while variables such as new production are more prevalent 
 # within the 'spring group'. It is also apparent that the wintertime conditions 
 # are very distinct from the other two groups.
 
-
-
 ```
+
+
+
+
+
+
+
+
