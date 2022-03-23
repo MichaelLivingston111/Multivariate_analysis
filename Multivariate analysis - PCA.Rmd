@@ -27,19 +27,29 @@ suppressMessages(library(viridis))
 
 
 # Load in the appropriate data
-data <- read.csv("PCA_input.csv", skip = 0, header = TRUE, fill = TRUE)
+data_2 <- read.csv("PCA_input.csv", skip = 0, header = TRUE, fill = TRUE)
+data <- read.csv("Total_data.csv", skip = 0, header = TRUE, fill = TRUE)
 
 ```
 
 Create the PCA and get a summary of the PCs
 ```{r}
 
+# Index out specific categories:
+total_split <- split(data, data$PCA_1)  # All data split
+
+data <- total_split$Y  
+
 # Select variables of interest: Exclude categorical data
-xdf <- select(data, New_production, TEP_C, Nitrate, Chlorophyll, 
-               MLD, Percent_small_cells, bSi_C, Temperature) 
+xdf <- select(data, TEP_C, Nitrate, Chl, 
+               DO, Temperature, MLD, POC) 
+
+xdf_2 <- select(data, TEP, Nitrate, Chl, 
+               DO, Temperature, MLD, POC) 
 
 # Create the Principal components:
-xpca <- prcomp(xdf, scale = TRUE, center = TRUE) 
+xpca <- prcomp(xdf, scale = TRUE, center = TRUE, scores = TRUE) 
+xpca_2 <- prcomp(xdf_2, scale = TRUE, center = TRUE, scores = TRUE) 
 
 # Obtain a summary of all the principal components:
 summary(xpca)
@@ -60,27 +70,109 @@ PCA <- autoplot(xpca, data = data, colour = 'Group', loadings = TRUE,
          loadings.colour = 'blue',loadings.label = TRUE, 
          loadings.label.size = 3, loadings.label.colour = 'black')
 
-PCA + 
-  theme_minimal() + 
+PCA_2 <- autoplot(xpca_2, data = data, colour = 'Group', loadings = TRUE, 
+         loadings.colour = 'blue',loadings.label = TRUE, 
+         loadings.label.size = 3, loadings.label.colour = 'black')
+
+PCA <- PCA + 
   ylim(-0.4, 0.6) +
   xlim(-0.4, 0.4) +
-  labs(color = "Group") +
   guides(fill = FALSE) +
-  scale_color_manual(values = c(8, 9, 3, 2, 5), 
-                     labels = c("Spring: Coastal", "Spring: Off-shelf",
-                        "Summer: Coastal", "Summer: Off-shelf",
-                        "Winter: Off-shelf"))
+  scale_color_manual(values = c(8, 9, 3, 6, 5, 13)) +
+  theme_pubr()
 
+PCA_2 <- PCA_2 + 
+  ylim(-0.4, 0.6) +
+  xlim(-0.4, 0.4) +
+  guides(fill = FALSE) +
+  scale_color_manual(values = c(8, 9, 3, 6, 5, 13)) +
+  theme_pubr()
+
+Figure <- ggarrange(PCA, PCA_2, common.legend = TRUE)
+
+Figure 
 
 # When viewing the results, we can see that specific variables such as 
 # Temperature and %TEP (carbon gels) are more strongly expressed within the 
-# 'summer group', while variables such as new production are more prevalent 
-# within the 'spring group'. It is also apparent that the wintertime conditions 
+# 'summer group'. It is also apparent that the wintertime conditions 
 # are very distinct from the other two groups.
+
+pdf(file = "/Users/michaellivingston/Desktop/PCA_1.pdf",   # The directory you want to save the file in
+    width = 10, # The width of the plot in inches
+    height = 5) # The height of the plot in inches
+
+Figure
+
+dev.off()
+
+
+
+```
+
+# Create another set of PCAs using the second dataframe:
+```{r}
+
+xdf <- select(data_2, New_production, bSi_C, Nitrate, TEP, Chlorophyll, DO, Percent_small_cells, Temperature)
+
+
+xpca <- prcomp(xdf, scale = TRUE, center = TRUE)
+
+
+autoplot(xpca, data = data_2, colour = 'Group', shape = 'Season', loadings = TRUE, 
+         loadings.colour = 'blue',loadings.label = TRUE, 
+         loadings.label.size = 3, loadings.label.colour = 'black',
+         frame = FALSE, frame.colour = 'Group')
+
+
 
 ```
 
 
+# Render a 3D PCA using plotly
+```{r}
+
+# Redo the PCA calculations:
+
+# Create the Principal components:
+xpca <- princomp(xdf, scale = TRUE, center = TRUE, scores = T, cor = T) 
+
+# Scores
+scores <- xpca$scores
+x <- scores[,1]
+y <- scores[,2]
+z <- scores[,3]
+
+
+# Loadings
+loads <- xpca$loadings
+
+# Scale factor for loadings
+scale.loads <- 5
+
+
+# 3D plot
+library(plotly)
+
+p <- plot_ly() %>%
+  add_trace(x=x, y=y, z=z,
+            type="scatter3d", mode="markers",
+            marker = list(color=y, 
+               colorscale = c("#FFE1A1", "#683531"), 
+               opacity = 0.7)) 
+
+for (k in 1:nrow(loads)) {
+   x <- c(0, loads[k,1])*scale.loads
+   y <- c(0, loads[k,2])*scale.loads
+   z <- c(0, loads[k,3])*scale.loads
+   p <- p %>% add_trace(x=x, y=y, z=z,
+            type="scatter3d", mode="lines",
+            line = list(width=8),
+            opacity = 1) 
+}
+print(p)
+
+
+```
 
 
 
